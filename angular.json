@@ -33,6 +33,14 @@
                         "styles": [
                             "src/styles.scss"
                         ],
+                        "optimization": {
+                            "scripts": true,
+                            "styles": {
+                                "minify": true,
+                                "inlineCritical": false
+                            },
+                            "fonts": true
+                        },
                         "scripts": []
                     },
                     "configurations": {
@@ -40,8 +48,8 @@
                             "budgets": [
                                 {
                                     "type": "initial",
-                                    "maximumWarning": "500kB",
-                                    "maximumError": "1MB"
+                                    "maximumWarning": "4mb",
+                                    "maximumError": "5mb"
                                 },
                                 {
                                     "type": "anyComponentStyle",

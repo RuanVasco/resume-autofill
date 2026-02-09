@@ -4,6 +4,6 @@
     "description": "",
     "manifest_version": 3,
     "action": {
-        "default_pop": "index.html"
+        "default_popup": "index.html"
     }
 }
