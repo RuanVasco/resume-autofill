@@ -16,6 +16,9 @@ export class StorageService {
             resolve();
           }
         });
+      } else {
+        localStorage.setItem(key, JSON.stringify(value));
+        resolve();
       }
     });
   }

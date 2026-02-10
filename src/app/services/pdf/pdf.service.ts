@@ -8,7 +8,7 @@ export class PdfService {
   constructor() {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
-        'assets/pdf.worker.min.js',
+        'assets/pdf.worker.min.mjs',
       );
     }
   }

@@ -1,39 +1,68 @@
 <div class="popup-container">
-    <mat-card class="main-card">
-        <mat-card-header>
-            <mat-card-title>Resume AutoFill</mat-card-title>
-            <mat-card-subtitle>Configure seu currículo</mat-card-subtitle>
-        </mat-card-header>
+  <div class="header">
+    <mat-icon class="header-icon">auto_fix_high</mat-icon>
+    <h1>Resume AutoFill</h1>
+  </div>
 
-        <mat-card-content>
-            @if (fileName) {
-            <div class="status-area">
-                <mat-icon color="primary">description</mat-icon>
-                <span class="filename">{{ fileName }}</span>
-            </div>
-            } @else {
-            <div class="empty-state">
-                <p>Nenhum currículo carregado.</p>
-            </div>
-            }
+  <input
+    #fileInput
+    type="file"
+    (change)="onFileSelected($event)"
+    accept=".pdf"
+    hidden
+  />
 
-            @if (isLoading) {
-            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-            }
+  <!-- Estado: Carregando -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <mat-progress-bar mode="indeterminate" />
+      <p class="loading-text">Processando currículo...</p>
+    </div>
+  }
 
-            <input #fileInput type="file" (change)="onFileSelected($event)" accept=".pdf" style="display: none;">
+  <!-- Estado: Com currículo salvo -->
+  @if (hasResume() && !isLoading()) {
+    <mat-card appearance="outlined" class="resume-card">
+      <mat-card-content>
+        <div class="resume-header">
+          <mat-icon class="pdf-icon">picture_as_pdf</mat-icon>
+          <div class="resume-info">
+            <span class="resume-filename">{{ fileName() }}</span>
+            <span class="resume-label">Currículo salvo</span>
+          </div>
+        </div>
 
-            <div class="debug-box" *ngIf="storedTextPreview">
-                <small><strong>Preview do Storage:</strong></small>
-                <p>{{ storedTextPreview }}</p>
-            </div>
-        </mat-card-content>
+        @if (resumeContent()) {
+          <div class="resume-preview">
+            <small class="preview-label">Preview do conteúdo:</small>
+            <p class="preview-text">{{ resumeContent()!.substring(0, 200) }}...</p>
+          </div>
+        }
+      </mat-card-content>
 
-        <mat-card-actions align="end">
-            <button mat-flat-button color="primary" (click)="fileInput.click()" [disabled]="isLoading">
-                <mat-icon>upload_file</mat-icon>
-                {{ fileName ? 'Trocar PDF' : 'Carregar PDF' }}
-            </button>
-        </mat-card-actions>
+      <mat-card-actions>
+        <button mat-button (click)="fileInput.click()">
+          <mat-icon>swap_horiz</mat-icon>
+          Trocar PDF
+        </button>
+        <button mat-button color="warn" (click)="removeResume()">
+          <mat-icon>delete_outline</mat-icon>
+          Remover
+        </button>
+      </mat-card-actions>
     </mat-card>
+  }
+
+  <!-- Estado: Sem currículo -->
+  @if (!hasResume() && !isLoading()) {
+    <div class="upload-zone" (click)="fileInput.click()">
+      <mat-icon class="upload-icon">cloud_upload</mat-icon>
+      <p class="upload-title">Envie seu currículo</p>
+      <p class="upload-hint">Clique para selecionar um arquivo PDF</p>
+      <button mat-flat-button>
+        <mat-icon>upload_file</mat-icon>
+        Selecionar PDF
+      </button>
+    </div>
+  }
 </div>

@@ -1,85 +1,96 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { PdfService } from './services/pdf/pdf.service';
 import { StorageService } from './services/storage/storage.service';
-import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
   imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
     MatButtonModule,
     MatCardModule,
     MatIconModule,
     MatProgressBarModule,
+    MatSnackBarModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   private pdfService = inject(PdfService);
   private storageService = inject(StorageService);
+  private snackBar = inject(MatSnackBar);
 
-  isLoading = false;
-  fileName: string | null = null;
-  storedTextPreview: string | null = null;
+  fileName = signal<string | null>(null);
+  resumeContent = signal<string | null>(null);
+  isLoading = signal(false);
+  hasResume = computed(() => !!this.fileName());
 
-  async ngOnInit(): Promise<Promise<void>> {
+  constructor() {
+    this.loadFromStorage();
+  }
+
+  private async loadFromStorage(): Promise<void> {
     const savedName = await this.storageService.get<string>('resume_filename');
     if (savedName) {
-      this.fileName = savedName;
+      this.fileName.set(savedName);
       const fullText = await this.storageService.get<string>('resume_content');
-      this.storedTextPreview = fullText
-        ? fullText.substring(0, 100) + '...'
-        : null;
+      this.resumeContent.set(fullText ?? null);
     }
   }
 
-  async onFileSelected(event: any) {
-    const file: File = event.target.files[0];
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
 
-    if (file) {
-      if (file.type !== 'application/pdf') {
-        // this.snackBar.open('Por favor, selecione apenas arquivos PDF.', 'OK', {
-        //   duration: 3000,
-        // });
-        return;
-      }
+    if (!file) return;
 
-      this.isLoading = true;
-      this.fileName = file.name;
+    if (file.type !== 'application/pdf') {
+      this.snackBar.open('Por favor, selecione apenas arquivos PDF.', 'OK', {
+        duration: 3000,
+      });
+      return;
+    }
 
-      try {
-        console.log('Iniciando extração...');
-        const text = await this.pdfService.extractText(file);
+    this.isLoading.set(true);
+    this.fileName.set(file.name);
 
-        await this.storageService.set('resume_content', text);
-        await this.storageService.set('resume_filename', file.name);
+    try {
+      const text = await this.pdfService.extractText(file);
 
-        this.storedTextPreview = text.substring(0, 100) + '...';
+      await this.storageService.set('resume_content', text);
+      await this.storageService.set('resume_filename', file.name);
 
-        // this.snackBar.open(
-        //   'Currículo processado e salvo com sucesso!',
-        //   'Fechar',
-        //   {
-        //     duration: 3000,
-        //     panelClass: ['success-snackbar'],
-        //   },
-        // );
-      } catch (error) {
-        console.error('Erro ao processar:', error);
-        // this.snackBar.open('Erro ao ler PDF. Verifique o console.', 'Fechar');
-        this.fileName = null;
-      } finally {
-        this.isLoading = false;
-      }
+      this.resumeContent.set(text);
+
+      this.snackBar.open('Currículo processado e salvo com sucesso!', 'Fechar', {
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erro ao processar:', error);
+      this.snackBar.open('Erro ao ler PDF. Tente novamente.', 'Fechar', {
+        duration: 4000,
+      });
+      this.fileName.set(null);
+      this.resumeContent.set(null);
+    } finally {
+      this.isLoading.set(false);
+      input.value = '';
     }
   }
 
-  title = 'resume-autofill';
+  async removeResume(): Promise<void> {
+    await this.storageService.remove('resume_content');
+    await this.storageService.remove('resume_filename');
+
+    this.fileName.set(null);
+    this.resumeContent.set(null);
+
+    this.snackBar.open('Currículo removido.', 'OK', {
+      duration: 3000,
+    });
+  }
 }
