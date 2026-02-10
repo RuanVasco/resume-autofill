@@ -86,8 +86,9 @@
   }
 }
 
-// Resume card (has resume state)
-.resume-card {
+// Resume card (has resume state) & API key card
+.resume-card,
+.apikey-card {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -142,6 +143,53 @@
       line-height: 1.5;
       max-height: 120px;
       overflow-y: auto;
+    }
+  }
+}
+
+// API key card specifics
+.apikey-card {
+  flex: 0 0 auto;
+
+  .apikey-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .key-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    color: var(--mat-sys-tertiary);
+  }
+
+  .apikey-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .apikey-title {
+    font: var(--mat-sys-title-small);
+    color: var(--mat-sys-on-surface);
+  }
+
+  .apikey-value {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    font-family: monospace;
+  }
+
+  .apikey-empty {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .apikey-form {
+    margin-top: 12px;
+
+    .apikey-field {
+      width: 100%;
     }
   }
 }

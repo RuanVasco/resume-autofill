@@ -65,4 +65,67 @@
       </button>
     </div>
   }
+
+  <mat-divider />
+
+  <!-- Seção: API Key -->
+  <mat-card appearance="outlined" class="apikey-card">
+    <mat-card-content>
+      <div class="apikey-header">
+        <mat-icon class="key-icon">vpn_key</mat-icon>
+        <div class="apikey-info">
+          <span class="apikey-title">API Key do Gemini</span>
+          @if (hasApiKey() && !isEditingApiKey()) {
+            <span class="apikey-value">{{ apiKeyMasked() }}</span>
+          } @else if (!hasApiKey() && !isEditingApiKey()) {
+            <span class="apikey-empty">Nenhuma API key configurada</span>
+          }
+        </div>
+      </div>
+
+      @if (!hasApiKey() || isEditingApiKey()) {
+        <div class="apikey-form">
+          <mat-form-field appearance="outline" class="apikey-field">
+            <mat-label>API Key</mat-label>
+            <input
+              matInput
+              type="password"
+              placeholder="Cole sua API key aqui"
+              [ngModel]="apiKeyInput()"
+              (ngModelChange)="apiKeyInput.set($event)"
+              (keyup.enter)="saveApiKey()"
+            />
+            <mat-icon matPrefix>key</mat-icon>
+          </mat-form-field>
+        </div>
+      }
+    </mat-card-content>
+
+    <mat-card-actions>
+      @if (!hasApiKey() && !isEditingApiKey()) {
+        <button mat-flat-button (click)="saveApiKey()">
+          <mat-icon>save</mat-icon>
+          Salvar
+        </button>
+      } @else if (hasApiKey() && !isEditingApiKey()) {
+        <button mat-button (click)="startEditApiKey()">
+          <mat-icon>edit</mat-icon>
+          Editar
+        </button>
+        <button mat-button color="warn" (click)="removeApiKey()">
+          <mat-icon>delete_outline</mat-icon>
+          Remover
+        </button>
+      } @else if (isEditingApiKey()) {
+        <button mat-flat-button (click)="saveApiKey()">
+          <mat-icon>save</mat-icon>
+          Salvar
+        </button>
+        <button mat-button (click)="cancelEditApiKey()">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+      }
+    </mat-card-actions>
+  </mat-card>
 </div>

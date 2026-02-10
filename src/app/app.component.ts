@@ -1,18 +1,26 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { PdfService } from './services/pdf/pdf.service';
 import { StorageService } from './services/storage/storage.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
   imports: [
+    FormsModule,
     MatButtonModule,
     MatCardModule,
+    MatDividerModule,
+    MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
   ],
@@ -29,6 +37,16 @@ export class AppComponent {
   isLoading = signal(false);
   hasResume = computed(() => !!this.fileName());
 
+  apiKey = signal<string | null>(null);
+  apiKeyInput = signal('');
+  isEditingApiKey = signal(false);
+  hasApiKey = computed(() => !!this.apiKey());
+  apiKeyMasked = computed(() => {
+    const key = this.apiKey();
+    if (!key || key.length < 8) return key ?? '';
+    return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
+  });
+
   constructor() {
     this.loadFromStorage();
   }
@@ -39,6 +57,11 @@ export class AppComponent {
       this.fileName.set(savedName);
       const fullText = await this.storageService.get<string>('resume_content');
       this.resumeContent.set(fullText ?? null);
+    }
+
+    const savedKey = await this.storageService.get<string>('gemini_api_key');
+    if (savedKey) {
+      this.apiKey.set(savedKey);
     }
   }
 
@@ -92,5 +115,45 @@ export class AppComponent {
     this.snackBar.open('Currículo removido.', 'OK', {
       duration: 3000,
     });
+  }
+
+  async saveApiKey(): Promise<void> {
+    const key = this.apiKeyInput().trim();
+    if (!key) {
+      this.snackBar.open('A API key não pode estar vazia.', 'OK', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    await this.storageService.set('gemini_api_key', key);
+    this.apiKey.set(key);
+    this.apiKeyInput.set('');
+    this.isEditingApiKey.set(false);
+
+    this.snackBar.open('API key salva com sucesso!', 'Fechar', {
+      duration: 3000,
+    });
+  }
+
+  async removeApiKey(): Promise<void> {
+    await this.storageService.remove('gemini_api_key');
+    this.apiKey.set(null);
+    this.apiKeyInput.set('');
+    this.isEditingApiKey.set(false);
+
+    this.snackBar.open('API key removida.', 'OK', {
+      duration: 3000,
+    });
+  }
+
+  startEditApiKey(): void {
+    this.apiKeyInput.set(this.apiKey() ?? '');
+    this.isEditingApiKey.set(true);
+  }
+
+  cancelEditApiKey(): void {
+    this.apiKeyInput.set('');
+    this.isEditingApiKey.set(false);
   }
 }
