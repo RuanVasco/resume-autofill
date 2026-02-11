@@ -193,3 +193,42 @@
     }
   }
 }
+
+// Autofill section
+.autofill-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  mat-progress-bar {
+    width: 100%;
+  }
+
+  .autofill-status-text {
+    margin: 0;
+    font: var(--mat-sys-body-medium);
+    color: var(--mat-sys-on-surface-variant);
+    text-align: center;
+  }
+
+  .autofill-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    text-align: center;
+
+    .hint-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .autofill-button {
+    width: 100%;
+  }
+}

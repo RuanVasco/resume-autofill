@@ -47,6 +47,11 @@ export class AppComponent {
     return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
   });
 
+  isAutoFilling = signal(false);
+  autoFillStatus = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+  autoFillError = signal<string | null>(null);
+  canAutoFill = computed(() => this.hasResume() && this.hasApiKey() && !this.isAutoFilling());
+
   constructor() {
     this.loadFromStorage();
   }
@@ -155,5 +160,39 @@ export class AppComponent {
   cancelEditApiKey(): void {
     this.apiKeyInput.set('');
     this.isEditingApiKey.set(false);
+  }
+
+  async startAutoFill(): Promise<void> {
+    this.isAutoFilling.set(true);
+    this.autoFillStatus.set('loading');
+    this.autoFillError.set(null);
+
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'START_AUTOFILL' });
+
+      if (response?.success) {
+        this.autoFillStatus.set('success');
+        this.snackBar.open(
+          `Formulário preenchido! ${response.filledCount} campo(s) preenchido(s).`,
+          'Fechar',
+          { duration: 4000 }
+        );
+      } else {
+        this.autoFillStatus.set('error');
+        this.autoFillError.set(response?.error ?? 'Erro desconhecido.');
+        this.snackBar.open(
+          response?.error ?? 'Erro ao preencher formulário.',
+          'Fechar',
+          { duration: 4000 }
+        );
+      }
+    } catch (error) {
+      this.autoFillStatus.set('error');
+      const message = (error as Error).message;
+      this.autoFillError.set(message);
+      this.snackBar.open(`Erro: ${message}`, 'Fechar', { duration: 4000 });
+    } finally {
+      this.isAutoFilling.set(false);
+    }
   }
 }

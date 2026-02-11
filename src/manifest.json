@@ -3,7 +3,11 @@
     "version": "0.0.1",
     "description": "",
     "manifest_version": 3,
+    "permissions": ["storage", "activeTab", "scripting"],
     "action": {
         "default_popup": "index.html"
+    },
+    "background": {
+        "service_worker": "background.js"
     }
 }

@@ -128,4 +128,42 @@
       }
     </mat-card-actions>
   </mat-card>
+
+  <mat-divider />
+
+  <!-- Seção: Autofill -->
+  <div class="autofill-section">
+    @if (isAutoFilling()) {
+      <mat-progress-bar mode="indeterminate" />
+      <p class="autofill-status-text">Analisando formulário e preenchendo campos...</p>
+    }
+
+    @if (!hasResume() && !hasApiKey()) {
+      <p class="autofill-hint">
+        <mat-icon class="hint-icon">info</mat-icon>
+        Envie seu currículo e configure a API key para começar.
+      </p>
+    } @else if (!hasResume()) {
+      <p class="autofill-hint">
+        <mat-icon class="hint-icon">info</mat-icon>
+        Envie seu currículo para habilitar o preenchimento automático.
+      </p>
+    } @else if (!hasApiKey()) {
+      <p class="autofill-hint">
+        <mat-icon class="hint-icon">info</mat-icon>
+        Configure a API key do Gemini para habilitar o preenchimento.
+      </p>
+    }
+
+    <button
+      mat-fab
+      extended
+      (click)="startAutoFill()"
+      [disabled]="!canAutoFill()"
+      class="autofill-button"
+    >
+      <mat-icon>auto_fix_high</mat-icon>
+      Preencher formulário
+    </button>
+  </div>
 </div>
