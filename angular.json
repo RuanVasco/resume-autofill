@@ -30,7 +30,8 @@
                             "src/manifest.json",
                             {
                                 "glob": "**/*",
-                                "input": "public"
+                                "input": "public",
+                                "output": "."
                             },
                             {
                                 "glob": "pdf.worker.min.mjs",

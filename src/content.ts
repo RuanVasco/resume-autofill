@@ -1,19 +1,20 @@
 import type { ExtensionMessage, FormFieldDescriptor, AutofillResultMessage } from './shared/messages';
 
-const INJECTED_FLAG = '__RESUME_AUTOFILL_INJECTED__';
-
-if (!(window as any)[INJECTED_FLAG]) {
-  (window as any)[INJECTED_FLAG] = true;
-
-  chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
-    if (message.type === 'SCAN_AND_FILL') {
-      handleScanAndFill().then(sendResponse);
-      return true;
-    }
-
-    return false;
-  });
+// Remove previous listener on re-injection (e.g. after extension reload)
+if ((window as any).__RESUME_AUTOFILL_LISTENER__) {
+  chrome.runtime.onMessage.removeListener((window as any).__RESUME_AUTOFILL_LISTENER__);
 }
+
+const listener = (message: ExtensionMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void): boolean | undefined => {
+  if (message.type === 'SCAN_AND_FILL') {
+    handleScanAndFill().then(sendResponse);
+    return true;
+  }
+  return undefined;
+};
+
+(window as any).__RESUME_AUTOFILL_LISTENER__ = listener;
+chrome.runtime.onMessage.addListener(listener);
 
 async function handleScanAndFill(): Promise<AutofillResultMessage> {
   try {

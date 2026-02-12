@@ -1,26 +1,41 @@
-import type { ExtensionMessage, AutofillRequestMessage, AutofillResultMessage } from './shared/messages';
+import type {
+  ExtensionMessage,
+  AutofillRequestMessage,
+  AutofillResultMessage,
+} from './shared/messages';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
-chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
-  if (message.type === 'START_AUTOFILL') {
-    handleStartAutofill().then(sendResponse);
-    return true;
-  }
+chrome.runtime.onMessage.addListener(
+  (message: ExtensionMessage, _sender, sendResponse) => {
+    if (message.type === 'START_AUTOFILL') {
+      handleStartAutofill().then(sendResponse);
+      return true;
+    }
 
-  if (message.type === 'AUTOFILL_REQUEST') {
-    handleAutofillRequest(message).then(sendResponse);
-    return true;
-  }
+    if (message.type === 'AUTOFILL_REQUEST') {
+      handleAutofillRequest(message).then(sendResponse);
+      return true;
+    }
 
-  return false;
-});
+    return false;
+  },
+);
 
 async function handleStartAutofill(): Promise<AutofillResultMessage> {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (!tab?.id) {
-      return { type: 'AUTOFILL_RESULT', success: false, filledCount: 0, error: 'Nenhuma aba ativa encontrada.' };
+      return {
+        type: 'AUTOFILL_RESULT',
+        success: false,
+        filledCount: 0,
+        error: 'Nenhuma aba ativa encontrada.',
+      };
     }
 
     await chrome.scripting.executeScript({
@@ -28,7 +43,9 @@ async function handleStartAutofill(): Promise<AutofillResultMessage> {
       files: ['content.js'],
     });
 
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'SCAN_AND_FILL' } as ExtensionMessage);
+    const response = await sendMessageWithRetry(tab.id, {
+      type: 'SCAN_AND_FILL',
+    } as ExtensionMessage);
     return response as AutofillResultMessage;
   } catch (error) {
     return {
@@ -40,9 +57,32 @@ async function handleStartAutofill(): Promise<AutofillResultMessage> {
   }
 }
 
-async function handleAutofillRequest(message: AutofillRequestMessage): Promise<{ type: 'AUTOFILL_RESPONSE'; mapping: Record<string, string> }> {
-  const { resume_content: resume } = await chrome.storage.local.get('resume_content');
-  const { gemini_api_key: apiKey } = await chrome.storage.local.get('gemini_api_key');
+async function sendMessageWithRetry(
+  tabId: number,
+  message: ExtensionMessage,
+  retries = 5,
+  delay = 100,
+): Promise<any> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await chrome.tabs.sendMessage(tabId, message);
+    } catch {
+      if (i === retries - 1)
+        throw new Error(
+          'Content script não respondeu. Recarregue a página e tente novamente.',
+        );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+async function handleAutofillRequest(
+  message: AutofillRequestMessage,
+): Promise<{ type: 'AUTOFILL_RESPONSE'; mapping: Record<string, string> }> {
+  const { resume_content: resume } =
+    await chrome.storage.local.get('resume_content');
+  const { gemini_api_key: apiKey } =
+    await chrome.storage.local.get('gemini_api_key');
 
   if (!resume || !apiKey) {
     return { type: 'AUTOFILL_RESPONSE', mapping: {} };
