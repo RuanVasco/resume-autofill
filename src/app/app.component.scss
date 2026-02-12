@@ -192,6 +192,19 @@
       width: 100%;
     }
   }
+
+  .model-selector {
+    margin-top: 12px;
+
+    .model-field {
+      width: 100%;
+    }
+
+    .models-error {
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-error);
+    }
+  }
 }
 
 // Autofill section

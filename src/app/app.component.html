@@ -83,6 +83,35 @@
         </div>
       </div>
 
+      @if (hasApiKey() && !isEditingApiKey()) {
+        <div class="model-selector">
+          <mat-form-field appearance="outline" class="model-field">
+            <mat-label>Modelo</mat-label>
+            @if (isLoadingModels()) {
+              <mat-select disabled>
+                <mat-option>Carregando...</mat-option>
+              </mat-select>
+            } @else {
+              <mat-select
+                [value]="selectedModelId()"
+                (selectionChange)="onModelSelected($event.value)"
+              >
+                @for (model of models(); track model.id) {
+                  <mat-option [value]="model.id">{{ model.displayName }}</mat-option>
+                }
+                @if (models().length === 0) {
+                  <mat-option [value]="selectedModelId()">{{ selectedModelId() }}</mat-option>
+                }
+              </mat-select>
+            }
+            <mat-icon matPrefix>smart_toy</mat-icon>
+          </mat-form-field>
+          @if (modelsError()) {
+            <span class="models-error">{{ modelsError() }}</span>
+          }
+        </div>
+      }
+
       @if (!hasApiKey() || isEditingApiKey()) {
         <div class="apikey-form">
           <mat-form-field appearance="outline" class="apikey-field">

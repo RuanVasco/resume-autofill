@@ -4,8 +4,9 @@ import type {
   AutofillResultMessage,
 } from './shared/messages';
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_API_BASE =
+  'https://generativelanguage.googleapis.com/v1beta/models';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
@@ -83,10 +84,15 @@ async function handleAutofillRequest(
     await chrome.storage.local.get('resume_content');
   const { gemini_api_key: apiKey } =
     await chrome.storage.local.get('gemini_api_key');
+  const { gemini_model: model } =
+    await chrome.storage.local.get('gemini_model');
 
   if (!resume || !apiKey) {
     return { type: 'AUTOFILL_RESPONSE', mapping: {} };
   }
+
+  const selectedModel = model || DEFAULT_MODEL;
+  const geminiApiUrl = `${GEMINI_API_BASE}/${selectedModel}:generateContent`;
 
   const fieldsDescription = message.fields
     .map((f) => {
@@ -116,7 +122,7 @@ Your task: map each field to the most appropriate value from the resume.
 - Do NOT include any explanation, only the JSON.`;
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const response = await fetch(`${geminiApiUrl}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -5,7 +5,9 @@
       "Bash(npx ng version)",
       "Bash(npm ls:*)",
       "Bash(npm install)",
-      "Bash(npx ng build)"
+      "Bash(npx ng build)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebSearch"
     ]
   }
 }

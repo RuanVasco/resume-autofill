@@ -9,7 +9,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
+interface GeminiModel {
+  id: string;
+  displayName: string;
+}
 
 @Component({
   selector: 'app-root',
@@ -22,6 +28,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
+    MatSelectModule,
     MatSnackBarModule,
   ],
   templateUrl: './app.component.html',
@@ -47,6 +54,11 @@ export class AppComponent {
     return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
   });
 
+  models = signal<GeminiModel[]>([]);
+  selectedModelId = signal('gemini-2.5-flash');
+  isLoadingModels = signal(false);
+  modelsError = signal<string | null>(null);
+
   isAutoFilling = signal(false);
   autoFillStatus = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   autoFillError = signal<string | null>(null);
@@ -67,6 +79,13 @@ export class AppComponent {
     const savedKey = await this.storageService.get<string>('gemini_api_key');
     if (savedKey) {
       this.apiKey.set(savedKey);
+
+      const savedModel = await this.storageService.get<string>('gemini_model');
+      if (savedModel) {
+        this.selectedModelId.set(savedModel);
+      }
+
+      this.fetchModels(savedKey);
     }
   }
 
@@ -139,13 +158,19 @@ export class AppComponent {
     this.snackBar.open('API key salva com sucesso!', 'Fechar', {
       duration: 3000,
     });
+
+    this.fetchModels(key);
   }
 
   async removeApiKey(): Promise<void> {
     await this.storageService.remove('gemini_api_key');
+    await this.storageService.remove('gemini_model');
     this.apiKey.set(null);
     this.apiKeyInput.set('');
     this.isEditingApiKey.set(false);
+    this.models.set([]);
+    this.selectedModelId.set('gemini-2.5-flash');
+    this.modelsError.set(null);
 
     this.snackBar.open('API key removida.', 'OK', {
       duration: 3000,
@@ -160,6 +185,43 @@ export class AppComponent {
   cancelEditApiKey(): void {
     this.apiKeyInput.set('');
     this.isEditingApiKey.set(false);
+  }
+
+  private async fetchModels(apiKey: string): Promise<void> {
+    this.isLoadingModels.set(true);
+    this.modelsError.set(null);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar modelos (${response.status})`);
+      }
+
+      const data = await response.json();
+      const models: GeminiModel[] = (data.models ?? [])
+        .filter((m: any) =>
+          m.supportedGenerationMethods?.includes('generateContent'),
+        )
+        .map((m: any) => ({
+          id: (m.name as string).replace('models/', ''),
+          displayName: m.displayName as string,
+        }));
+
+      this.models.set(models);
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      this.modelsError.set((error as Error).message);
+    } finally {
+      this.isLoadingModels.set(false);
+    }
+  }
+
+  async onModelSelected(modelId: string): Promise<void> {
+    this.selectedModelId.set(modelId);
+    await this.storageService.set('gemini_model', modelId);
   }
 
   async startAutoFill(): Promise<void> {
